@@ -9,7 +9,9 @@ int main() {
 
    int count = getLegalMoves(b, moves);
 
-   printf("%d\n", count);
+   printBoard(b);
+
+   printMoves(count, moves);
 
    return 0;
 }

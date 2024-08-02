@@ -6,8 +6,8 @@
 typedef unsigned long long bitboard;
 
 typedef enum {
-  BLACK = -1,
-  EMPTY = 0,
+  EMPTY = -1,
+  BLACK = 0,
   WHITE = 1
 } Piece;
 
@@ -18,5 +18,6 @@ typedef struct {
 
 // void generateNeighborMasks();
 Board* newGame();
-// void printBoard(Board * b);
+void printBoard(Board * b);
 int getLegalMoves(Board* b, int moves[]);
+void printMoves(int count, int moves[]);

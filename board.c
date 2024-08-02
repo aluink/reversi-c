@@ -142,10 +142,7 @@ void generateNeighborMasks() {
 
     // RIGHT
     if (RIGHT) mask |= 1UL << (pos + 1);
-    // char * coords = posToCoords(pos);
-    // printf("%s\n", coords);
-    // free(coords);
-    // printBitboard(mask);
+
     printf("0x%llX,\n", mask);
   }
 }
@@ -162,16 +159,17 @@ Board* newGame() {
 
 int can_move_direction(Board *b, int col, int row, int cdir, int rdir) {
   int other_count = 0;
-  for (col += cdir;col >= 0 && col < 8;col += cdir) {
-    for (row += rdir;row >= 0 && row < 8;row += rdir) {
-      if (b->bitboards[-b->turn] >> (row*8+col) & 1) {
-        other_count++;
-        continue;
-      } if (b->bitboards[b->turn] >> (row*8+col) & 1) {
-        return other_count > 0;
-      } else {
-        return 0;
-      }
+  for (
+    col += cdir, row += rdir;
+    row >= 0 && row < 8 && col >= 0 && col < 8;
+    col += cdir, row += rdir) {
+    if (b->bitboards[b->turn ^ 1] >> (row*8+col) & 1) {
+      other_count++;
+      continue;
+    } if (b->bitboards[b->turn] >> (row*8+col) & 1) {
+      return other_count > 0;
+    } else {
+      return 0;
     }
   }
 
@@ -193,10 +191,10 @@ int getLegalMoves(Board* b, int moves[]) {
     bitboard move_options = ADJACENCY_MASKS[idx] & ~allBoard;
     while (move_options > 0) {
       int move_option_idx = ffsll(move_options) - 1;
-      int mo_col = idx % 8;
-      int mo_row = idx / 8;
+      int mo_col = move_option_idx % 8;
+      int mo_row = move_option_idx / 8;
 
-      if (can_move_direction(b, col, row, mo_col - col, mo_row - row)) {
+      if (can_move_direction(b, mo_col, mo_row, col - mo_col, row - mo_row)) {
         moves[movecount++] = move_option_idx;
       }
 
@@ -207,6 +205,12 @@ int getLegalMoves(Board* b, int moves[]) {
   }
 
   return movecount;
+}
+
+void printMoves(int count, int moves[]) {
+  for (int i = 0;i < count;i++) {
+    printf("%c%d\n", moves[i] % 8 + 'A', moves[i] / 8 + 1);
+  }
 }
 
 // Piece getPos(Board * b, int pos) {
@@ -248,7 +252,7 @@ void makemove(Board * b, int col, int row) {
   int pos = row*8+col;
   b->bitboards[b->turn] |= 1UL << pos;
 
-  bitboard adjacent_pos = ADJACENCY_MASKS[pos] & b->bitboards[-b->turn];
+  bitboard adjacent_pos = ADJACENCY_MASKS[pos] & b->bitboards[b->turn ^ 1];
 
   while (adjacent_pos > 0) {
     int idx = ffsll(adjacent_pos);
@@ -256,5 +260,5 @@ void makemove(Board * b, int col, int row) {
     adjacent_pos &= adjacent_pos - 1;
   }
 
-  b->turn *= -1;
+  b->turn ^= 1;
 }
