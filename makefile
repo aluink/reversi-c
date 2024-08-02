@@ -6,3 +6,5 @@ all : $(OBJS)
 board.o : board.h board.c
 main.o : main.c
 
+clean: 
+	rm -fr main ${OBJS}
