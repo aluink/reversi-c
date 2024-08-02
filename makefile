@@ -1,8 +1,8 @@
-OBJS = board.o
+OBJS = board.o main.o
+
+all : $(OBJS)
+	$(CC) $(OBJS) -o main
 
 board.o : board.h board.c
+main.o : main.c
 
-main : board.o
-	$(CC) $(OBJS) main.c -o main
-
-all : main
