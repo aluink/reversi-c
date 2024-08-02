@@ -3,17 +3,28 @@
 
 #include "board.h"
 
+#define BLACK_COLOR "\033[0;30m"
+#define RED_COLOR "\033[0;31m"
+#define YELLOW_COLOR "\033[0;33m"
+#define NORMAL_COLOR "\033[0m"
+
+/**
+ * Converts a board position index to a string
+ * coordinate. The returned string memory must be freed
+ */
 char* posToCoords(int pos) {
   char col = pos % 8 + 'A';
   int row = pos / 8 + 1;
   // return (char)(1 + 'A');
-  sprintf(malloc(3), "%c%d");
+  char *str = malloc(3);
+  sprintf(str, "%c%d", col, row);
+  return str;
 }
 
 void printBitboard(bitboard board) {
   for (int row = 7;row >= 0;row--) {
     for (int col = 0;col < 8;col++) {
-      printf("%d", (board >> (row*8+col) & 1));
+      printf("%d", (int)(board >> (row*8+col) & 1));
     }
     printf("\n");
   }
@@ -29,34 +40,35 @@ void generateNeighborMasks() {
     int DOWN = pos > 7;
 
     if (DOWN) { // DOWN
-      mask |= 1UL << pos - 8;
+      mask |= 1UL << (pos - 8);
 
       // DOWN-LEFT
-      if (LEFT) mask |= 1UL << pos - 9;
+      if (LEFT) mask |= 1UL << (pos - 9);
 
       // DOWN-RIGHT
-      if (RIGHT) mask |= 1UL << pos - 7;
+      if (RIGHT) mask |= 1UL << (pos - 7);
     }
 
     if (UP) { // UP
-      mask |= 1UL << pos + 8;
+      mask |= 1UL << (pos + 8);
 
       // UP-LEFT
-      if (LEFT) mask |= 1UL << pos + 7;
+      if (LEFT) mask |= 1UL << (pos + 7);
 
       // UP-RIGHT
-      if (RIGHT) mask |= 1UL << pos + 9;
+      if (RIGHT) mask |= 1UL << (pos + 9);
     }
 
     // LEFT
-    if (LEFT) mask |= 1UL << pos - 1;
+    if (LEFT) mask |= 1UL << (pos - 1);
 
     // RIGHT
-    if (RIGHT) mask |= 1UL << pos + 1;
-    char * coords = posToCoords(pos);
-    printf("%s\n", coords);
-    free(coords);
-    printBitboard(mask);
+    if (RIGHT) mask |= 1UL << (pos + 1);
+    // char * coords = posToCoords(pos);
+    // printf("%s\n", coords);
+    // free(coords);
+    // printBitboard(mask);
+    printf("0x%llX,\n", mask);
   }
 }
 
@@ -99,32 +111,37 @@ Piece getPos(Board * b, int col, int row) {
 }
 
 
+
 void printBoard(Board * b) {
   printf("   +---+---+---+---+---+---+---+---+\n");
   for (int row = 7;row >= 0;row--) {
-    printf(" %d ", row);
+    printf(" %d ", row+1);
     for (int col = 0;col < 8;col++) {
       Piece piece = getPos(b, col, row);
-      char c = piece == WHITE
-        ? 'X'
+      char c = piece == EMPTY ? ' ' : 'O';
+      const char* color = piece == WHITE
+        ? RED_COLOR
         : piece == BLACK
-          ? 'O'
-          : ' ';
-      printf("+ %c ", c);
+          ? YELLOW_COLOR
+          : NORMAL_COLOR;
+      printf("+ %s%c%s ", color, c, NORMAL_COLOR);
     }
     printf("+\n");
-    printf("   +---+---+---+---+---+---+---+---+\n", row+1);
+    printf("   +---+---+---+---+---+---+---+---+\n");
   }
   printf("     A   B   C   D   E   F   G   H\n");
 }
 
-// void makemove(Board * b, int pos) {
-//   b->bitboards[b->turn] |= 1UL << pos;
-//   b->turn ^= 1;
-// }
-
 void makemove(Board * b, int col, int row) {
   int pos = row*8+col;
   b->bitboards[b->turn] |= 1UL << pos;
+
+  bitboard adjacent_pos = ADJACENCY_MASKS[pos];
+
+  while (adjacent_pos > 0) {
+    
+    adjacent_pos &= adjacent_pos - 1;
+  }
+
   b->turn ^= 1;
 }
