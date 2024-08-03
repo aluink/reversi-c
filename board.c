@@ -4,7 +4,8 @@
 
 #include "board.h"
 
-#define BLACK_COLOR "\033[0;30m"
+#define BOARD_COLOR "\033[0;97m"
+#define BLACK_COLOR "\033[0;32m"
 #define RED_COLOR "\033[0;31m"
 #define YELLOW_COLOR "\033[0;33m"
 #define NORMAL_COLOR "\033[0m"
@@ -157,17 +158,18 @@ Board* newGame() {
 }
 
 
-int can_move_direction(Board *b, int col, int row, int cdir, int rdir) {
+bitboard can_move_direction(Board *b, int col, int row, int cdir, int rdir) {
   int other_count = 0;
+  bitboard mask = 0;
   for (
     col += cdir, row += rdir;
     row >= 0 && row < 8 && col >= 0 && col < 8;
     col += cdir, row += rdir) {
     if (b->bitboards[b->turn ^ 1] >> (row*8+col) & 1) {
-      other_count++;
+      mask |= 1ULL << (row*8+col);
       continue;
     } if (b->bitboards[b->turn] >> (row*8+col) & 1) {
-      return other_count > 0;
+      return mask;
     } else {
       return 0;
     }
@@ -177,13 +179,27 @@ int can_move_direction(Board *b, int col, int row, int cdir, int rdir) {
 }
 
 
-int getLegalMoves(Board* b, int moves[]) {
+Moveset* getLegalMoves(Board* b) {
   int movecount = 0;
   bitboard currentPlayerBoard = b->bitboards[b->turn];
   bitboard otherPlayerBoard = b->bitboards[b->turn ^ 1];
   bitboard allBoard = currentPlayerBoard | otherPlayerBoard;
 
   bitboard tmp = otherPlayerBoard;
+  int k[3] = { -1, -1, -1 };
+  int moveCheck[64] = {
+    -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1
+  };
+  bitboard posMask;
+  Moveset* moveset = malloc(sizeof(Moveset));
+  moveset->count = 0;
   while (tmp > 0) {
     int idx = ffsll(tmp) - 1;
     int col = idx % 8;
@@ -194,8 +210,16 @@ int getLegalMoves(Board* b, int moves[]) {
       int mo_col = move_option_idx % 8;
       int mo_row = move_option_idx / 8;
 
-      if (can_move_direction(b, mo_col, mo_row, col - mo_col, row - mo_row)) {
-        moves[movecount++] = move_option_idx;
+      if ((posMask = can_move_direction(b, mo_col, mo_row, col - mo_col, row - mo_row))) {
+        if (moveCheck[move_option_idx] > -1) {
+          moveset->movemasks[moveCheck[move_option_idx]] |= 1ULL << move_option_idx;
+        } else {
+          moveCheck[move_option_idx] = move_option_idx;
+          moveset->moves[moveset->count] = move_option_idx;
+          moveset->movemasks[move_option_idx] = posMask | (1ULL << move_option_idx);
+          moveset->count++;
+        }
+        
       }
 
       move_options &= move_options - 1;
@@ -204,61 +228,59 @@ int getLegalMoves(Board* b, int moves[]) {
     tmp &= tmp - 1;
   }
 
-  return movecount;
+  return moveset;
 }
 
-void printMoves(int count, int moves[]) {
-  for (int i = 0;i < count;i++) {
-    printf("%c%d\n", moves[i] % 8 + 'A', moves[i] / 8 + 1);
+void printMoves(Moveset* moveset) {
+  for (int i = 0;i < moveset->count;i++) {
+    printf("%c%d\n", moveset->moves[i] % 8 + 'A', moveset->moves[i] / 8 + 1);
+    // printBitboard(moveset->movemasks[moveset->moves[i]]);
+    // printf("\n");
   }
 }
 
-// Piece getPos(Board * b, int pos) {
-//   if ((b->bitboards[0] >> pos & 1UL) > 0) return BLACK;
-//   if ((b->bitboards[1] >> pos & 1UL) > 0) return WHITE;
-//   return EMPTY;
-// }
-
 Piece getPos(Board * b, int col, int row) {
   int pos = row*8+col;
-  if ((b->bitboards[0] >> pos & 1UL) > 0) return BLACK;
-  if ((b->bitboards[1] >> pos & 1UL) > 0) return WHITE;
+  if ((b->bitboards[0] >> pos & 1UL) > 0) return YELLOW;
+  if ((b->bitboards[1] >> pos & 1UL) > 0) return RED;
   return EMPTY;
 }
 
 
 
-void printBoard(Board * b) {
+void printBoard(Board * b, Moveset* ghostMoves) {
+  printf("%s", BOARD_COLOR);
   printf("   +---+---+---+---+---+---+---+---+\n");
   for (int row = 7;row >= 0;row--) {
     printf(" %d ", row+1);
     for (int col = 0;col < 8;col++) {
       Piece piece = getPos(b, col, row);
       char c = piece == EMPTY ? ' ' : 'O';
-      const char* color = piece == WHITE
+      const char* color = piece == RED
         ? RED_COLOR
-        : piece == BLACK
+        : piece == YELLOW
           ? YELLOW_COLOR
-          : NORMAL_COLOR;
-      printf("+ %s%c%s ", color, c, NORMAL_COLOR);
+          : BLACK_COLOR;
+        
+      if (ghostMoves && ghostMoves->movemasks[row*8+col]) {
+        c = 'O';
+      }
+      printf("+ %s%c%s ", color, c, BOARD_COLOR);
     }
     printf("+\n");
     printf("   +---+---+---+---+---+---+---+---+\n");
   }
   printf("     A   B   C   D   E   F   G   H\n");
+  printf("%s%s%s to move.\n",
+    b->turn == 0 ? YELLOW_COLOR : RED_COLOR,
+    b->turn == 0 ? "Yellow" : "Red",
+    NORMAL_COLOR
+  );
 }
 
-void makemove(Board * b, int col, int row) {
+void makemove(Board * b, Moveset *moves, int col, int row) {
   int pos = row*8+col;
-  b->bitboards[b->turn] |= 1UL << pos;
-
-  bitboard adjacent_pos = ADJACENCY_MASKS[pos] & b->bitboards[b->turn ^ 1];
-
-  while (adjacent_pos > 0) {
-    int idx = ffsll(adjacent_pos);
-    
-    adjacent_pos &= adjacent_pos - 1;
-  }
-
+  b->bitboards[b->turn] |= moves->movemasks[pos];
   b->turn ^= 1;
+  b->bitboards[b->turn] &= ~moves->movemasks[pos];
 }
