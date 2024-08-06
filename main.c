@@ -24,6 +24,7 @@ int main() {
     printBoard(b, ENABLE_GHOST_MOVES ? history[movecount].moves : NULL);
     printMoves(history[movecount].moves);
 
+   printf("mc: %d\n", movecount);
     printf("Enter a command or move: ");
     fgets(buffer, 64, stdin);
 
@@ -37,7 +38,8 @@ int main() {
       ENABLE_GHOST_MOVES ^= 1;
     }
     else if (!strncmp("undo", buffer, 2)) {
-      free(history[movecount--].moves);
+      free(history[movecount].moves);
+      history[movecount--].moves = NULL;
       unmakemove(b, history[movecount]);
     }
     else {
