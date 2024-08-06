@@ -7,7 +7,7 @@
 #define BOARD_COLOR "\033[0;97m"
 #define BLACK_COLOR "\033[0;32m"
 #define RED_COLOR "\033[0;31m"
-#define YELLOW_COLOR "\033[0;33m"
+#define YELLOW_COLOR "\033[0;34m"
 #define NORMAL_COLOR "\033[0m"
 
 
@@ -157,6 +157,18 @@ Board* newGame() {
   return b;
 }
 
+Board* newGameSet(short turn, bitboard yellow, bitboard red) {
+  Board * b = malloc(sizeof(Board));
+  b->turn = turn;
+  b->bitboards[0] = yellow;
+  b->bitboards[1] = red;
+
+  printBitboard(b->bitboards[0]);
+  printBitboard(b->bitboards[1]);
+  
+  return b;
+}
+
 
 bitboard can_move_direction(Board *b, int col, int row, int cdir, int rdir) {
   int other_count = 0;
@@ -212,7 +224,7 @@ Moveset* getLegalMoves(Board* b) {
 
       if ((posMask = can_move_direction(b, mo_col, mo_row, col - mo_col, row - mo_row))) {
         if (moveCheck[move_option_idx] > -1) {
-          moveset->movemasks[moveCheck[move_option_idx]] |= 1ULL << move_option_idx;
+          moveset->movemasks[moveCheck[move_option_idx]] |= posMask;
         } else {
           moveCheck[move_option_idx] = move_option_idx;
           moveset->moves[moveset->count] = move_option_idx;
@@ -263,7 +275,7 @@ void printBoard(Board * b, Moveset* ghostMoves) {
           : BLACK_COLOR;
         
       if (ghostMoves && ghostMoves->movemasks[row*8+col]) {
-        c = 'O';
+        c = 'X';
       }
       printf("+ %s%c%s ", color, c, BOARD_COLOR);
     }
