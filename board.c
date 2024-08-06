@@ -290,9 +290,16 @@ void printBoard(Board * b, Moveset* ghostMoves) {
   );
 }
 
-void makemove(Board * b, Moveset *moves, int col, int row) {
-  int pos = row*8+col;
-  b->bitboards[b->turn] |= moves->movemasks[pos];
+void makemove(Board * b, Mademove mm) {
+  int pos = mm.row*8+mm.col;
+  b->bitboards[b->turn] |= mm.moves->movemasks[pos];
   b->turn ^= 1;
-  b->bitboards[b->turn] &= ~moves->movemasks[pos];
+  b->bitboards[b->turn] &= ~mm.moves->movemasks[pos];
+}
+
+void unmakemove(Board *b, Mademove mm) {
+  int pos = mm.row*8+mm.col;
+  b->bitboards[b->turn] |= mm.moves->movemasks[pos] & ~(1ULL << pos);
+  b->turn ^= 1;
+  b->bitboards[b->turn] &= ~mm.moves->movemasks[pos];
 }

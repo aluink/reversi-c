@@ -22,9 +22,16 @@ typedef struct {
   bitboard movemasks[64];
 } Moveset;
 
+typedef struct {
+  Moveset* moves;
+  int col;
+  int row;
+} Mademove;
+
 // void generateNeighborMasks();
 Board* newGame();
 void printBoard(Board * b, Moveset* ghostMoves);
 Moveset* getLegalMoves(Board* b);
 void printMoves(Moveset* moves);
-void makemove(Board * b, Moveset *moves, int col, int row);
+void unmakemove(Board *b, Mademove mm);
+void makemove(Board * b, Mademove mm);
