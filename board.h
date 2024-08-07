@@ -24,8 +24,7 @@ typedef struct {
 
 typedef struct {
   Moveset* moves;
-  int col;
-  int row;
+  int pos;
 } Mademove;
 
 // void generateNeighborMasks();

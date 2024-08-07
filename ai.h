@@ -1,0 +1,1 @@
+int makeAiMove(Board *b);

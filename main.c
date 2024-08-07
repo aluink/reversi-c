@@ -36,8 +36,15 @@ int main() {
     }
     else if (!strncmp("ghost", buffer, 2)) {
       ENABLE_GHOST_MOVES ^= 1;
-    }
-    else if (!strncmp("undo", buffer, 2)) {
+    } else if (!strncmp("undo", buffer, 2)) {
+      free(history[movecount].moves);
+      history[movecount--].moves = NULL;
+      unmakemove(b, history[movecount]);
+    } else if (!strncmp("unmake", buffer, 6)) {
+      free(history[movecount].moves);
+      history[movecount--].moves = NULL;
+      unmakemove(b, history[movecount]);
+      
       free(history[movecount].moves);
       history[movecount--].moves = NULL;
       unmakemove(b, history[movecount]);
@@ -46,8 +53,7 @@ int main() {
       col = buffer[0] - (buffer[0] > 'Z' ? 'a' : 'A');
       row = buffer[1] - '1';
       if (history[movecount].moves->movemasks[row * 8 + col]) {
-        history[movecount].col = col;
-        history[movecount].row = row;
+        history[movecount].pos = row*8+col;
         makemove(b, history[movecount]);
         movecount++;
       }
