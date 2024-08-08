@@ -31,6 +31,8 @@ typedef struct {
 Board* newGame();
 void printBoard(Board * b, Moveset* ghostMoves);
 Moveset* getLegalMoves(Board* b);
+void change_turn(Board *b);
+
 void printMoves(Moveset* moves);
 void unmakemove(Board *b, Mademove mm);
 void makemove(Board * b, Mademove mm);
