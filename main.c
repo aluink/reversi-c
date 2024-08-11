@@ -40,10 +40,13 @@ int main() {
       free(history[movecount].moves);
       history[movecount--].moves = NULL;
       unmakemove(b, history[movecount]);
-    } else if (!strncmp("go", buffer, 6)) {
+    } else if (!strncmp("go", buffer, 2)) {
       getBestMove(b, &history[movecount]);
       makemove(b, history[movecount]);
       movecount++;
+    } else if (!strncmp("fen ", buffer, 4)) {
+      char * fen = buffer+4;
+      setFen(b, fen);
     } else if (!strncmp("unmake", buffer, 6)) {
       free(history[movecount].moves);
       history[movecount--].moves = NULL;

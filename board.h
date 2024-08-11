@@ -36,5 +36,6 @@ void printMoves(Moveset* moves);
 void unmakemove(Board *b, Mademove mm);
 void makemove(Board * b, Mademove mm);
 void getBestMove(Board *b, Mademove *mm);
+void setFen(Board *b, char *buffer);
 
 #endif

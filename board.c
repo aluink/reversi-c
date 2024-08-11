@@ -258,9 +258,73 @@ Piece getPos(Board * b, int col, int row) {
   return EMPTY;
 }
 
+void setPos(Board *b, int pos, Piece p) {
+  if (p == EMPTY) return;
+  b->bitboards[p] |= 1ULL << pos;
+}
 
+void getFen(Board *b, char *buffer) {
+  int row, col, idx = 0;
+  int cnt = 0;
+  char c;
+
+  for(row = 7;row >= 0;row--) {
+    cnt = 0;
+    for(col = 0;col < 8;col++) {
+      Piece piece = getPos(b, col, row);
+      if (piece == EMPTY) {
+        cnt++;
+        continue;
+      }
+       if (cnt > 0) {
+        buffer[idx++] = cnt + '0';
+        cnt = 0;
+       }
+      
+      c = piece == YELLOW ? 'y' : 'r';
+      buffer[idx++] = c;
+    }
+    if (cnt > 0) buffer[idx++] = cnt + '0';
+    if (row > 0) buffer[idx++] = '/';
+  }
+  buffer[idx++] = ' ';
+  buffer[idx++] = b->turn == YELLOW ? 'y' : 'r';
+  buffer[idx++] = 0;
+}
+
+void setFen(Board *b, char *buffer) {
+  int row, col, idx = 0;
+  char c;
+
+  for(row = 7;row >= 0;row--) {
+    for(col = 0;col < 8;col++) {
+      c = buffer[idx++];
+      Piece piece = c == 'y'
+        ? YELLOW
+        : c == 'r'
+          ? RED
+          : EMPTY;
+      
+      if(piece == EMPTY) {
+        col += c - '0';
+      } else {
+        setPos(b, row*8+col, piece);
+      }
+    }
+    if (row != 0) idx++;
+  }
+
+  idx++;
+  c = buffer[idx];
+
+  b->turn = c == 'y' ? 0 : 1;
+}
 
 void printBoard(Board * b, Moveset* ghostMoves) {
+  char buffer[100];
+  getFen(b, buffer);
+
+  printf("%s\n", buffer);
   printf("%s", BOARD_COLOR);
   printf("   +---+---+---+---+---+---+---+---+\n");
   for (int row = 7;row >= 0;row--) {
@@ -289,6 +353,7 @@ void printBoard(Board * b, Moveset* ghostMoves) {
     NORMAL_COLOR
   );
 }
+
 
 void change_turn(Board *b) {
   b->turn ^= 1;

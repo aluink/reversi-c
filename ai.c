@@ -58,16 +58,18 @@ int absearch(Board *b, int depth, int alpha, int beta, Moveset *ms) {
 
       if(ms->count == 0) {
         // Game over
-        score = piece_count_score(b);
-        score = score > 0
+        best = eval(b, NULL);
+        best = best > 0
           ? INF
-          : score < 0
+          : best < 0
             ? -INF
             : 0;
       } else {
         best = absearch(b, depth-1, alpha, beta, ms);
       }
       free(ms);
+  } if (!depth) {
+    best = eval(b, ms);
   } else {
     mm.moves = ms;
     for (i = 0;i < ms->count;i++) {
@@ -113,15 +115,14 @@ void getBestMove(Board *b, Mademove *mm) {
   for (int i = 0;i < mm->moves->count;i++) {
     mm->pos = mm->moves->moves[i];
     makemove(b, *mm);
-
     score = -absearch(b, depth, -INF, INF, NULL);
+    unmakemove(b, *mm);
 
     if (score > bestScore) {
       bestScore = score;
       bestMove = mm->pos;
     }
 
-    unmakemove(b, *mm);
   }
 
   mm->pos = bestMove;
