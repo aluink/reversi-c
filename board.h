@@ -1,7 +1,6 @@
 
 #ifndef __BOARD_H_
 #define __BOARD_H_
-#endif
 
 typedef unsigned long long bitboard;
 
@@ -36,3 +35,6 @@ void change_turn(Board *b);
 void printMoves(Moveset* moves);
 void unmakemove(Board *b, Mademove mm);
 void makemove(Board * b, Mademove mm);
+void getBestMove(Board *b, Mademove *mm);
+
+#endif

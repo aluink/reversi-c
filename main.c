@@ -24,7 +24,7 @@ int main() {
     printBoard(b, ENABLE_GHOST_MOVES ? history[movecount].moves : NULL);
     printMoves(history[movecount].moves);
 
-   printf("mc: %d\n", movecount);
+    printf("mc: %d\n", movecount);
     printf("Enter a command or move: ");
     fgets(buffer, 64, stdin);
 
@@ -40,6 +40,10 @@ int main() {
       free(history[movecount].moves);
       history[movecount--].moves = NULL;
       unmakemove(b, history[movecount]);
+    } else if (!strncmp("go", buffer, 6)) {
+      getBestMove(b, &history[movecount]);
+      makemove(b, history[movecount]);
+      movecount++;
     } else if (!strncmp("unmake", buffer, 6)) {
       free(history[movecount].moves);
       history[movecount--].moves = NULL;
@@ -48,8 +52,7 @@ int main() {
       free(history[movecount].moves);
       history[movecount--].moves = NULL;
       unmakemove(b, history[movecount]);
-    }
-    else {
+    } else {
       col = buffer[0] - (buffer[0] > 'Z' ? 'a' : 'A');
       row = buffer[1] - '1';
       if (history[movecount].moves->movemasks[row * 8 + col]) {

@@ -2,8 +2,26 @@
 #include "board.h"
 
 #include <stdlib.h>
+#include <sys/time.h>
 
 #define INF (300000)
+#define SEARCH_TIME (5000)
+
+typedef unsigned long long millis;
+
+millis start_time;
+int timeup() {
+  millis cur_time;
+  struct timeval tv;
+
+  gettimeofday(&tv, NULL);
+
+  cur_time =
+    (unsigned long long)(tv.tv_sec) * 1000 +
+    (unsigned long long)(tv.tv_usec) / 1000;
+
+  return (cur_time - start_time) > SEARCH_TIME;
+}
 
 int count_pieces(bitboard b) {
   int i = 0;
@@ -26,8 +44,13 @@ int eval(Board *b, Moveset *ms) {
 
 int absearch(Board *b, int depth, int alpha, int beta, Moveset *ms) {
   int score;
+  int best = -INF;
+  int bestmove;
   int i;
-  ms = ms ? ms : getLegalMoves(b);
+  Mademove mm;
+  Moveset *to_clear = NULL;
+
+  ms = ms ? ms : (to_clear = getLegalMoves(b));
 
   if (ms->count == 0) {
       change_turn(b);
@@ -42,49 +65,65 @@ int absearch(Board *b, int depth, int alpha, int beta, Moveset *ms) {
             ? -INF
             : 0;
       } else {
-        score = -absearch(b, depth-1, alpha, beta, ms);
+        best = absearch(b, depth-1, alpha, beta, ms);
       }
       free(ms);
-      return score;
-  }
+  } else {
+    mm.moves = ms;
+    for (i = 0;i < ms->count;i++) {
+      mm.pos = ms->moves[i];
+      makemove(b, mm);
+      score = -absearch(b, depth-1, -beta, -alpha, NULL);
+      unmakemove(b, mm);
 
-  for (i = 0;i < ms->count;i++) {
-    if(beta < alpha) {
-      // cutoffs++;
-      // if(entry != null && entry.bestmove.equals(m)){
-      //   hashBMCuts++;
-      // }
-      // if(isKiller(m, depth)){
-      //   killerCuts++;
-      // }
-      return alpha;
+      if(timeup()) {
+        best = -INF;
+        break;
+      }
+
+      if(score > best){
+        bestmove = i;
+        alpha = best = score;
+      }
+      if(beta < alpha) {
+        // cutoffs++;
+        // if(entry != null && entry.bestmove.equals(m)){
+        //   hashBMCuts++;
+        // }
+        // if(isKiller(m, depth)){
+        //   killerCuts++;
+        // }
+        best = alpha;
+        break;
+      }
     }
   }
+
+  if (to_clear) free(to_clear);
+
+  return best;
 }
 
-void makeAiMove(Board *b) {
-  Moveset *moves = getLegalMoves(b);
+void getBestMove(Board *b, Mademove *mm) {
   int depth = 3;
   int bestScore = -INF;
   int bestMove;
   int score;
-  Mademove mm = { moves, -1 };
 
-  for (int i = 0;i < moves->count;i++) {
-    mm.pos = moves->moves[i];
-    makemove(b, mm);
+  for (int i = 0;i < mm->moves->count;i++) {
+    mm->pos = mm->moves->moves[i];
+    makemove(b, *mm);
 
     score = -absearch(b, depth, -INF, INF, NULL);
 
     if (score > bestScore) {
       bestScore = score;
-      bestMove = mm.pos;
+      bestMove = mm->pos;
     }
 
-    unmakemove(b, mm);
+    unmakemove(b, *mm);
   }
 
-  mm.pos = bestMove;
-  makemove(b, mm);
+  mm->pos = bestMove;
 }
 
